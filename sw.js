@@ -1,5 +1,5 @@
 // JonBrain capture prototype — offline shell
-const CACHE = 'jb-capture-v1';
+const CACHE = 'jb-capture-v2';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 
 self.addEventListener('install', e => {

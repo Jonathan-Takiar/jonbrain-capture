@@ -177,7 +177,7 @@
     captures.push(item); store(K_CAP, captures);           // preserved immediately, nothing to lose
     pendingShareId = item.id;
     const box = $('sharedBox'); box.hidden = false;
-    box.textContent = 'נשמר: ' + (p.get('url') || text).slice(0, 140) + '\nאפשר להוסיף מחשבה (לא חובה)';
+    box.textContent = '✓ נשמר במוח: ' + (p.get('url') || text).slice(0, 140) + '\nאפשר להוסיף מחשבה, או פשוט לסגור';
     input.placeholder = 'למה שמרת את זה? (לא חובה)';
     history.replaceState(null, '', location.pathname + '?src=share');
     flash('נשמר');
@@ -185,24 +185,35 @@
 
   // ---------- capture ----------
   function refreshCount() { $('count').textContent = captures.length; }
+  function syncBtn() {
+    const has = !!input.value.trim();
+    saveBtn.disabled = !has && !pendingShareId;
+    saveBtn.textContent = (!has && pendingShareId) ? 'סיום ✓' : 'לזרוק למוח';
+  }
   input.addEventListener('input', () => {
-    saveBtn.disabled = !input.value.trim();
+    syncBtn();
     if (session && session.firstKeyMs == null) { session.firstKeyMs = since(); persistMetrics(); }
   });
 
+  function endShare() {
+    pendingShareId = null;
+    $('sharedBox').hidden = true; input.placeholder = 'מה עובר לך בראש?';
+    syncBtn(); focusInput();
+  }
   function save() {
     const text = input.value.trim();
-    if (!text) return;
+    if (!text) { if (pendingShareId) endShare(); return; }
     const item = { id: uid(), text, createdAt: new Date().toISOString(), source: 'typed', online: navigator.onLine };
     if (pendingShareId) { item.relatedTo = pendingShareId; pendingShareId = null; }
     captures.push(item);
     const ok = store(K_CAP, captures);
     if (session && session.saveMs == null) { session.saveMs = since(); persistMetrics(); }
-    input.value = ''; saveBtn.disabled = true;
+    input.value = '';
     $('sharedBox').hidden = true; input.placeholder = 'מה עובר לך בראש?';
     refreshCount();
     flash(ok ? 'נקלט' : 'שגיאת שמירה — העתק את הטקסט!');
     if (!ok) { input.value = text; }
+    syncBtn();
     focusInput();
   }
   saveBtn.addEventListener('click', save);
@@ -275,6 +286,7 @@
 
   // ---------- boot ----------
   refreshCount();
+  syncBtn();
   focusInput();
   requestAnimationFrame(() => { focusInput(); checkKeyboard(); });
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
